@@ -1,0 +1,39 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build with Buildx + compress and save TAR
+        run: |
+          docker buildx build --platform linux/amd64 --progress=plain --compress -t minin-chat:${{ github.sha }} --load .
+          docker save minin-chat:${{ github.sha }} -o minin-chat-${{ github.sha }}.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: minin-chat-image
+          path: minin-chat-${{ github.sha }}.tar
+
+      - name: Show artifact info
+        run: |
+          ls -lh minin-chat-${{ github.sha }}.tar || true

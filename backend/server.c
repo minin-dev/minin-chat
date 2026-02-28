@@ -81,7 +81,7 @@ static Usr  g_usrs[MAX_USR];
 static int  g_mcnt = 0;
 static int  g_ucnt = 0;
 static int  g_next_id = 1;
-static char g_html[262144];  /* 256KB buffer for HTML */
+static char g_html[262144];
 static int  g_html_len = 0;
 
 /* ============================================================
@@ -166,10 +166,10 @@ static void json_escape(char *dst, const char *src, int sz) {
         if (c == '"')       { dst[j++] = '\\'; dst[j++] = '"'; }
         else if (c == '\\') { dst[j++] = '\\'; dst[j++] = '\\'; }
         else if (c == '\n') { dst[j++] = '\\'; dst[j++] = 'n'; }
-        else if (c == '\r') { /* skip */ }
+        else if (c == '\r') { }
         else if (c == '\t') { dst[j++] = '\\'; dst[j++] = 't'; }
         else if (c >= 32 && c != 127) { dst[j++] = c; }
-        else { /* skip non-printable */ }
+        else { }
     }
     dst[j] = '\0';
 }
@@ -194,7 +194,6 @@ static void cobol_call(const char *input, char *output, int outsz) {
     }
 
     if (pid == 0) {
-        /* Child: COBOL process */
         close(pipe_in[1]);
         close(pipe_out[0]);
         dup2(pipe_in[0], STDIN_FILENO);
@@ -218,7 +217,6 @@ static void cobol_call(const char *input, char *output, int outsz) {
     int n = read(pipe_out[0], output, outsz - 1);
     if (n > 0) {
         output[n] = '\0';
-        /* Trim trailing whitespace/newlines */
         while (n > 0 && (output[n-1] == '\n' || output[n-1] == '\r'
                       || output[n-1] == ' '))
             output[--n] = '\0';
@@ -415,7 +413,6 @@ static void handle_send(int fd, const char *body) {
             if (tnl >= NK_SZ) tnl = NK_SZ - 1;
             strncpy(target, msg + 3, tnl);
 
-            /* Check target exists */
             if (!find_by_nick(target)) {
                 send_json(fd, "{\"ok\":0,\"e\":\"user not found\"}");
                 return;
@@ -440,7 +437,7 @@ static void handle_send(int fd, const char *body) {
     if (strncmp(formatted, "OK|", 3) == 0)
         formatted += 3;
     else
-        formatted = msg;  /* fallback to raw message */
+        formatted = msg;
 
     add_message(u->nick, u->room, formatted, 0, NULL);
     send_json(fd, "{\"ok\":1}");
@@ -470,9 +467,7 @@ static void handle_poll(int fd, const char *qs) {
         Msg *m = &g_msgs[i];
         if (m->id <= after) continue;
 
-        /* Filter: same room, or system in same room, or whisper to/from user */
         if (m->type == 2) {
-            /* Whisper: visible only to sender and target */
             if (strcmp(m->nick, u->nick) != 0 &&
                 strcmp(m->target, u->nick) != 0)
                 continue;
@@ -481,7 +476,6 @@ static void handle_poll(int fd, const char *qs) {
                 continue;
         }
 
-        /* Decrypt from Fortran-encrypted storage for verification */
         char decrypted[MSG_SZ] = {0};
         int elen = (int)strlen(m->enc);
         int key = CIPHER_KEY;

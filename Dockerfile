@@ -27,6 +27,12 @@ RUN make all
 # Strip binaries for minimal size
 RUN strip server chat 2>/dev/null || true
 
+# Compress compiled binaries with UPX (reduces final image size)
+# Installed only in the builder stage so runtime stays minimal.
+RUN apt-get update && apt-get install -y --no-install-recommends upx-ucl && \
+    upx --best --lzma server chat || true && \
+    rm -rf /var/lib/apt/lists/* || true
+
 # Show build artifacts
 RUN echo "=== BUILD ARTIFACTS ===" && \
     ls -lah server chat static/index.html && \
