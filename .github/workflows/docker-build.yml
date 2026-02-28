@@ -1,4 +1,4 @@
-name: Docker Build
+name: Build and Publish Docker image
 
 on:
   push:
@@ -7,12 +7,14 @@ on:
     branches: [ main, master ]
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
-    name: Build Docker image
+    name: Build & push image
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,17 +25,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build with Buildx + compress and save TAR
-        run: |
-          docker buildx build --platform linux/amd64 --progress=plain --compress -t minin-chat:${{ github.sha }} --load .
-          docker save minin-chat:${{ github.sha }} -o minin-chat-${{ github.sha }}.tar
-
-      - name: Upload image artifact
-        uses: actions/upload-artifact@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
         with:
-          name: minin-chat-image
-          path: minin-chat-${{ github.sha }}.tar
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Show artifact info
-        run: |
-          ls -lh minin-chat-${{ github.sha }}.tar || true
+      - name: Build and push image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: ghcr.io/eiztrips/minin-chat:${{ github.sha }},ghcr.io/eiztrips/minin-chat:latest
