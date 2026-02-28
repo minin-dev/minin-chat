@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  minin-chat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: minin-chat
+    ports:
+      - "3010:3000"
+    restart: unless-stopped
+    mem_limit: 64m
+    cpus: 0.5
+    read_only: true
+    tmpfs:
+      - /tmp:size=10m
+    environment:
+      - TZ=UTC

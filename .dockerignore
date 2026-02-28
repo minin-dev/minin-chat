@@ -1,0 +1,8 @@
+.git
+*.md
+.dockerignore
+.gitignore
+backend/*.o
+backend/*.mod
+backend/server
+backend/chat
